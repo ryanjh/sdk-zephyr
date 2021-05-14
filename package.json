@@ -1,0 +1,6 @@
+{
+	"description": "NCS downstream of https://github.com/zephyrproject-rtos/zephyr",
+	"name": "framework-nrfconnect-zephyr",
+	"url": "http://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/",
+	"version": "v2.5.99-master-pio"
+}
