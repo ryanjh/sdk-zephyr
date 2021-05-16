@@ -165,7 +165,7 @@ def main():
     assert args.kernel, "--kernel ELF required to extract data"
     elf = ELFFile(open(args.kernel, "rb"))
 
-    edtser = os.path.join(os.path.split(args.kernel)[0], "edt.pickle")
+    edtser = os.path.join(os.path.split(args.kernel)[0], "zephyr", "edt.pickle")
     with open(edtser, 'rb') as f:
         edt = pickle.load(f)
 
