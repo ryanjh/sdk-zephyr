@@ -129,11 +129,11 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		}
 
 		if (msg_buf_used == 0) {
-			cur_xfer.p_primary_buf = msgs[i].buf;
-			cur_xfer.primary_length = msgs[i].len;
+			cur_xfer.primary_buffer.p_buffer = msgs[i].buf;
+			cur_xfer.primary_buffer.length = msgs[i].len;
 		} else {
-			cur_xfer.p_primary_buf = msg_buf;
-			cur_xfer.primary_length = msg_buf_used;
+			cur_xfer.primary_buffer.p_buffer = msg_buf;
+			cur_xfer.primary_buffer.length = msg_buf_used;
 		}
 		cur_xfer.type = (msgs[i].flags & I2C_MSG_READ) ?
 			NRFX_TWIM_XFER_RX : NRFX_TWIM_XFER_TX;
@@ -189,7 +189,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		 * content of concatenation buffer has to be copied back into
 		 * buffers provided by user. */
 		if ((msgs[i].flags & I2C_MSG_READ)
-		    && cur_xfer.p_primary_buf == msg_buf) {
+		    && cur_xfer.primary_buffer.p_buffer == msg_buf) {
 			int j = i;
 
 			while (msg_buf_used >= msgs[j].len) {
@@ -406,6 +406,15 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 	IF_ENABLED(USES_MSG_BUF(idx),					       \
 		(static uint8_t twim_##idx##_msg_buf[MSG_BUF_SIZE(idx)];))     \
 	static struct i2c_nrfx_twim_data twim_##idx##_data = {		       \
+		.twim_config = {					       \
+			.nrfy_config = {				       \
+				.pins    = {				       \
+					.scl_pin = DT_PROP(I2C(idx), scl_pin), \
+					.sda_pin = DT_PROP(I2C(idx), sda_pin), \
+				},					       \
+				.frequency = I2C_FREQUENCY(idx),	       \
+			}						       \
+		},							       \
 		.transfer_sync = Z_SEM_INITIALIZER(			       \
 			twim_##idx##_data.transfer_sync, 1, 1),		       \
 		.completion_sync = Z_SEM_INITIALIZER(			       \
