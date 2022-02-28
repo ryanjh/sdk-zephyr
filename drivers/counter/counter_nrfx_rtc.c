@@ -240,7 +240,7 @@ static int set_cc(const struct device *dev, uint8_t chan, uint32_t val,
 	__ASSERT(nrf_rtc_int_enable_check(rtc, int_mask) == 0,
 			"Expected that CC interrupt is disabled.");
 
-	evt = RTC_CHANNEL_EVENT_ADDR(chan);
+	evt = NRF_RTC_CHANNEL_EVENT_ADDR(chan);
 	top = data->top;
 	now = nrfy_rtc_counter_get(rtc);
 
@@ -614,8 +614,8 @@ static void alarm_irq_handle(const struct device *dev, uint32_t chan)
 	struct counter_nrfx_data *data = dev->data;
 
 	NRF_RTC_Type *rtc = config->rtc;
-	nrf_rtc_event_t evt = RTC_CHANNEL_EVENT_ADDR(chan);
-	uint32_t int_mask = RTC_CHANNEL_INT_MASK(chan);
+	nrf_rtc_event_t evt = NRF_RTC_CHANNEL_EVENT_ADDR(chan);
+	uint32_t int_mask = NRF_RTC_CHANNEL_INT_MASK(chan);
 
 	uint32_t event_mask = nrfy_rtc_events_process(rtc, NRFY_EVENT_TO_INT_BITMASK(evt));
 	bool hw_irq_pending = event_mask & NRFY_EVENT_TO_INT_BITMASK(evt);
