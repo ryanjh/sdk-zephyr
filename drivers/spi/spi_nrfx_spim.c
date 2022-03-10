@@ -13,7 +13,9 @@
 #include <nrfx_ppi.h>
 #endif
 #include <nrfx_spim.h>
+#ifdef CONFIG_SOC_NRF5340_CPUAPP
 #include <hal/nrf_clock.h>
+#endif
 #include <string.h>
 #include <zephyr/linker/devicetree_regions.h>
 
@@ -25,6 +27,11 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 
 #if (CONFIG_SPI_NRFX_RAM_BUFFER_SIZE > 0)
 #define SPI_BUFFER_IN_RAM 1
+#endif
+
+#if defined(CONFIG_SOC_PLATFORM_HALTIUM)
+static uint8_t *dma_tx_data = (uint8_t *)DT_REG_ADDR(DT_NODELABEL(spim130_dma_tx));
+static uint8_t *dma_rx_data = (uint8_t *)DT_REG_ADDR(DT_NODELABEL(spim130_dma_rx));
 #endif
 
 struct spi_nrfx_data {
@@ -307,6 +314,7 @@ static void transfer_next_chunk(const struct device *dev)
 		nrfx_spim_xfer_desc_t xfer;
 		nrfx_err_t result;
 		const uint8_t *tx_buf = ctx->tx_buf;
+		uint8_t *rx_buf = ctx->rx_buf;
 #if (CONFIG_SPI_NRFX_RAM_BUFFER_SIZE > 0)
 		if (spi_context_tx_buf_on(ctx) && !nrfx_is_in_ram(tx_buf)) {
 			if (chunk_len > CONFIG_SPI_NRFX_RAM_BUFFER_SIZE) {
@@ -322,10 +330,16 @@ static void transfer_next_chunk(const struct device *dev)
 		}
 
 		dev_data->chunk_len = chunk_len;
-
+#if CONFIG_SOC_PLATFORM_HALTIUM
+		if (tx_buf) {
+			(void)memcpy(dma_tx_data, tx_buf, chunk_len);
+			tx_buf = dma_tx_data;
+		}
+		rx_buf = dma_rx_data;
+#endif
 		xfer.p_tx_buffer = tx_buf;
 		xfer.tx_length   = spi_context_tx_buf_on(ctx) ? chunk_len : 0;
-		xfer.p_rx_buffer = ctx->rx_buf;
+		xfer.p_rx_buffer = rx_buf;
 		xfer.rx_length   = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
 
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
@@ -341,6 +355,9 @@ static void transfer_next_chunk(const struct device *dev)
 #endif
 		if (error == 0) {
 			result = nrfx_spim_xfer(&dev_config->spim, &xfer, 0);
+#if defined(CONFIG_SOC_PLATFORM_HALTIUM)
+			(void)memcpy(ctx->rx_buf, dma_rx_data, xfer.rx_length);
+#endif
 			if (result == NRFX_SUCCESS) {
 				return;
 			}
@@ -653,4 +670,8 @@ SPI_NRFX_SPIM_DEFINE(3);
 
 #ifdef CONFIG_SPI_4_NRF_SPIM
 SPI_NRFX_SPIM_DEFINE(4);
+#endif
+
+#ifdef CONFIG_SPI_130_NRF_SPIM
+SPI_NRFX_SPIM_DEVICE(130);
 #endif
