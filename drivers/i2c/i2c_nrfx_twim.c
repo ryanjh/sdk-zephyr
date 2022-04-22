@@ -407,14 +407,8 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 		(static uint8_t twim_##idx##_msg_buf[MSG_BUF_SIZE(idx)];))     \
 	static struct i2c_nrfx_twim_data twim_##idx##_data = {		       \
 		.twim_config = {					       \
-			.nrfy_config = {				       \
-				.pins    = {				       \
-					.scl_pin = DT_PROP(I2C(idx), scl_pin), \
-					.sda_pin = DT_PROP(I2C(idx), sda_pin), \
-				},					       \
-				.frequency = I2C_FREQUENCY(idx),	       \
-			}						       \
-		},							       \
+			.nrfy_config.frequency = I2C_FREQUENCY(idx),	       \
+		},							\
 		.transfer_sync = Z_SEM_INITIALIZER(			       \
 			twim_##idx##_data.transfer_sync, 1, 1),		       \
 		.completion_sync = Z_SEM_INITIALIZER(			       \
