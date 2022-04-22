@@ -613,22 +613,6 @@ static int spi_nrfx_init(const struct device *dev)
 			.drv_inst_idx = NRFX_SPIM##idx##_INST_IDX,	       \
 		},							       \
 		.max_freq = SPIM_PROP(idx, max_frequency),		       \
-		.def_config = {						       \
-			.nrfy_config = {				       \
-				.pins = {				       \
-					.sck_pin   = SPIM_PROP(idx, sck_pin),  \
-					.mosi_pin  = SPIM_PROP(idx, mosi_pin), \
-					.miso_pin  = SPIM_PROP(idx, miso_pin), \
-				},					       \
-				.orc       = SPIM_PROP(idx, overrun_character),\
-				.frequency = NRF_SPIM_FREQ_4M,		       \
-				.mode      = NRF_SPIM_MODE_0,		       \
-				.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST,     \
-				SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)	       \
-			},						       \
-			.sw_ss_pin = NRF_SPIM_PIN_NOT_CONNECTED,	       \
-			.miso_pull = SPIM_NRFX_MISO_PULL(idx),		       \
-		},							       \
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIM(idx)),		       \
 		.max_chunk_len = BIT_MASK(SPIM_PROP(idx, easydma_maxcnt_bits)),\
