@@ -11,10 +11,10 @@ menuconfig I2S_NRFX
 
 if I2S_NRFX
 
-#config NRFX_I2S0
-#	def_bool $(dt_nodelabel_has_compat,i2s0,$(DT_COMPAT_NORDIC_NRF_I2S))
-#	help
-#	  Enable nrfx I2S driver on instance 0.
+config NRFX_I2S0
+	def_bool $(dt_nodelabel_has_compat,i2s0,$(DT_COMPAT_NORDIC_NRF_I2S))
+	help
+	  Enable nrfx I2S driver on instance 0.
 
 config I2S_NRFX_RX_BLOCK_COUNT
 	int "RX queue length"

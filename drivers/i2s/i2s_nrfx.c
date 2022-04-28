@@ -896,7 +896,7 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 	static int i2s_nrfx_init##idx(const struct device *dev)		     \
 	{								     \
 		IRQ_CONNECT(DT_IRQN(I2S(idx)), DT_IRQ(I2S(idx), priority),   \
-			    nrfx_isr, nrfx_i2s_irq_handler, 0);		     \
+			    nrfx_isr, nrfx_i2s_##idx##_irq_handler, 0);		     \
 		const struct i2s_nrfx_drv_cfg *drv_cfg = dev->config;	     \
 		int err = pinctrl_apply_state(drv_cfg->pcfg,		     \
 					      PINCTRL_STATE_DEFAULT);	     \
@@ -928,7 +928,6 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 			NRFX_I2S_PIN_NOT_USED,				     \
 			NRFX_I2S_PIN_NOT_USED),				     \
 		.nrfx_def_cfg.skip_gpio_cfg = true,			     \
-		.nrfx_def_cfg.skip_psel_cfg = true,			     \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2S(idx)),		     \
 		.clk_src = I2S_CLK_SRC(idx),				     \
 	};								     \
