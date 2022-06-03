@@ -11,8 +11,9 @@ menuconfig I2S_NRFX
 
 if I2S_NRFX
 
-config NRFX_I2S0
-	def_bool $(dt_nodelabel_has_compat,i2s0,$(DT_COMPAT_NORDIC_NRF_I2S))
+config I2S_0_NRF_I2S
+	def_bool HAS_HW_NRF_I2S0
+	select NRFX_I2S0
 	help
 	  Enable nrfx I2S driver on instance 0.
 
