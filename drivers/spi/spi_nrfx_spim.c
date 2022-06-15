@@ -573,17 +573,13 @@ static int spi_nrfx_init(const struct device *dev)
 #define SPIM_PROP(idx, prop)		DT_PROP(SPIM(idx), prop)
 #define SPIM_HAS_PROP(idx, prop)	DT_NODE_HAS_PROP(SPIM(idx), prop)
 
-#define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)					\
-	IF_ENABLED(NRFX_SPIM_EXTENDED_ENABLED,					\
-		(.ext_config = {						\
-			.pins = { 						\
-				.dcx_pin = NRF_SPIM_PIN_NOT_CONNECTED,		\
-				.csn_pin = NRF_SPIM_PIN_NOT_CONNECTED 		\
-			},							\
-			COND_CODE_1(SPIM_PROP(idx, rx_delay_supported),		\
-				(.rx_delay = CONFIG_SPI_##idx##_NRF_RX_DELAY,))	\
-		}, 								\
-		.ext_enable = true, 						\
+#define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)						       \
+	IF_ENABLED(NRFX_SPIM_EXTENDED_ENABLED,						       \
+		(.nrfy_config.ext_enable = true,					       \
+		 .nrfy_config.ext_config.pins.dcx_pin = NRF_SPIM_PIN_NOT_CONNECTED,	       \
+		 .nrfy_config.ext_config.pins.csn_pin = NRF_SPIM_PIN_NOT_CONNECTED,	       \
+		COND_CODE_1(SPIM_PROP(idx, rx_delay_supported),				       \
+			(.nrfy_config.ext_config.rx_delay = SPIM_PROP(idx, rx_delay),),()) \
 		))
 
 #define SPI_NRFX_SPIM_DEFINE(idx)					       \
@@ -616,6 +612,12 @@ static int spi_nrfx_init(const struct device *dev)
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIM(idx)),		       \
 		.max_chunk_len = BIT_MASK(SPIM_PROP(idx, easydma_maxcnt_bits)),\
+		.def_config = {						       \
+			SPI_NRFX_SPIM_PIN_CFG(idx)			       \
+			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
+			.nrfy_config.orc = SPIM_PROP(idx, overrun_character),  \
+			.sw_ss_pin = NRF_SPIM_PIN_NOT_CONNECTED		       \
+		},							       \
 		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
 			(.anomaly_58_workaround =			       \
 				SPIM_PROP(idx, anomaly_58_workaround),),       \
