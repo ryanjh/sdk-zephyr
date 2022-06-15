@@ -6,7 +6,9 @@
 
 #include <zephyr/drivers/spi.h>
 #include <zephyr/pm/device.h>
+#ifdef CONFIG_PINCTRL
 #include <zephyr/drivers/pinctrl.h>
+#endif
 #include <soc.h>
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 #include <nrfx_gpiote.h>
@@ -29,11 +31,6 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 #define SPI_BUFFER_IN_RAM 1
 #endif
 
-#if defined(CONFIG_SOC_PLATFORM_HALTIUM)
-static uint8_t *dma_tx_data = (uint8_t *)DT_REG_ADDR(DT_NODELABEL(spim130_dma_tx));
-static uint8_t *dma_rx_data = (uint8_t *)DT_REG_ADDR(DT_NODELABEL(spim130_dma_rx));
-#endif
-
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
@@ -41,7 +38,8 @@ struct spi_nrfx_data {
 	bool    busy;
 	bool    initialized;
 #if SPI_BUFFER_IN_RAM
-	uint8_t *buffer;
+	uint8_t *tx_buffer;
+	uint8_t *rx_buffer;
 #endif
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	bool    anomaly_58_workaround_active;
@@ -321,8 +319,8 @@ static void transfer_next_chunk(const struct device *dev)
 				chunk_len = CONFIG_SPI_NRFX_RAM_BUFFER_SIZE;
 			}
 
-			memcpy(dev_data->buffer, tx_buf, chunk_len);
-			tx_buf = dev_data->buffer;
+			memcpy(dev_data->tx_buffer, tx_buf, chunk_len);
+			tx_buf = dev_data->tx_buffer;
 		}
 #endif
 		if (chunk_len > dev_config->max_chunk_len) {
@@ -332,10 +330,10 @@ static void transfer_next_chunk(const struct device *dev)
 		dev_data->chunk_len = chunk_len;
 #if CONFIG_SOC_PLATFORM_HALTIUM
 		if (tx_buf) {
-			(void)memcpy(dma_tx_data, tx_buf, chunk_len);
-			tx_buf = dma_tx_data;
+			memcpy(dev_data->tx_buffer, tx_buf, chunk_len);
+			tx_buf = dev_data->tx_buffer;
 		}
-		rx_buf = dma_rx_data;
+		rx_buf = dev_data->rx_buffer;
 #endif
 		xfer.p_tx_buffer = tx_buf;
 		xfer.tx_length   = spi_context_tx_buf_on(ctx) ? chunk_len : 0;
@@ -355,9 +353,7 @@ static void transfer_next_chunk(const struct device *dev)
 #endif
 		if (error == 0) {
 			result = nrfx_spim_xfer(&dev_config->spim, &xfer, 0);
-#if defined(CONFIG_SOC_PLATFORM_HALTIUM)
-			(void)memcpy(ctx->rx_buf, dma_rx_data, xfer.rx_length);
-#endif
+
 			if (result == NRFX_SUCCESS) {
 				return;
 			}
@@ -386,6 +382,11 @@ static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context)
 
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 		anomaly_58_workaround_clear(dev_data);
+#endif
+#if defined(CONFIG_SOC_PLATFORM_HALTIUM)
+		(void)memcpy(dev_data->ctx.rx_buf,
+			     dev_data->rx_buffer,
+			     spi_context_rx_buf_on(&dev_data->ctx) ? dev_data->chunk_len : 0);
 #endif
 		spi_context_update_tx(&dev_data->ctx, 1, dev_data->chunk_len);
 		spi_context_update_rx(&dev_data->ctx, 1, dev_data->chunk_len);
@@ -590,7 +591,10 @@ static int spi_nrfx_init(const struct device *dev)
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
 	}								       \
 	IF_ENABLED(SPI_BUFFER_IN_RAM,					       \
-		(static uint8_t spim_##idx##_buffer			       \
+		(static uint8_t spim_##idx##_tx_buffer			       \
+			[CONFIG_SPI_NRFX_RAM_BUFFER_SIZE]		       \
+			SPIM_MEMORY_SECTION(idx);			       \
+		 static uint8_t spim_##idx##_rx_buffer			       \
 			[CONFIG_SPI_NRFX_RAM_BUFFER_SIZE]		       \
 			SPIM_MEMORY_SECTION(idx);))			       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
@@ -598,7 +602,8 @@ static int spi_nrfx_init(const struct device *dev)
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(SPIM(idx), ctx)		       \
 		IF_ENABLED(SPI_BUFFER_IN_RAM,				       \
-			(.buffer = spim_##idx##_buffer,))		       \
+			(.tx_buffer = spim_##idx##_tx_buffer,		       \
+			 .rx_buffer = spim_##idx##_rx_buffer,))		       \
 		.dev  = DEVICE_DT_GET(SPIM(idx)),			       \
 		.busy = false,						       \
 	};								       \
