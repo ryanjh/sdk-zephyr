@@ -406,9 +406,6 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 	IF_ENABLED(USES_MSG_BUF(idx),					       \
 		(static uint8_t twim_##idx##_msg_buf[MSG_BUF_SIZE(idx)];))     \
 	static struct i2c_nrfx_twim_data twim_##idx##_data = {		       \
-		.twim_config = {					       \
-			.nrfy_config.frequency = I2C_FREQUENCY(idx),	       \
-		},							\
 		.transfer_sync = Z_SEM_INITIALIZER(			       \
 			twim_##idx##_data.transfer_sync, 1, 1),		       \
 		.completion_sync = Z_SEM_INITIALIZER(			       \
@@ -422,7 +419,7 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 		.twim_config = {					       \
 			.skip_gpio_cfg = true,				       \
 			.skip_psel_cfg = true,				       \
-			.frequency = I2C_FREQUENCY(idx),		       \
+			.nrfy_config.frequency = I2C_FREQUENCY(idx)	       \
 		},							       \
 		.concat_buf_size = CONCAT_BUF_SIZE(idx),		       \
 		.flash_buf_max_size = FLASH_BUF_MAX_SIZE(idx),		       \
