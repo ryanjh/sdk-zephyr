@@ -141,3 +141,9 @@
   - "subsys/dfu/**/*"
   - "subsys/net/**/*"
   - "subsys/settings/**/*"
+
+"CI-test_sdk_hcs":
+  - "**/*"
+
+"CI-test_sdk_sysctrl":
+  - "**/*"
