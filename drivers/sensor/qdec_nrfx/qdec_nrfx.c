@@ -36,6 +36,7 @@ struct qdec_nrfx_config {
 	const nrfx_qdec_config_t nrfx_config; /* nrfx configuration. */
 	uint32_t enable_pin;
 	uint32_t steps;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 static inline struct qdec_nrfx_data *get_dev_data(const struct device *dev)
@@ -47,10 +48,6 @@ static inline const struct qdec_nrfx_config *get_dev_config(const struct device 
 {
 	return dev->config;
 }
-
-PINCTRL_DT_DEFINE(DT_DRV_INST(0));
-static const struct pinctrl_dev_config *qdec_nrfx_pcfg =
-	PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(0));
 
 static void accumulate(struct qdec_nrfx_data *data, int16_t acc)
 {
@@ -186,7 +183,7 @@ static int qdec_nrfx_init(const struct device *dev)
 	const nrfx_qdec_t *qdec = &get_dev_config(dev)->qdec;
 	nrfx_err_t err;
 
-	int ret = pinctrl_apply_state(qdec_nrfx_pcfg, PINCTRL_STATE_DEFAULT);
+	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
 		return ret;
@@ -212,12 +209,12 @@ static int qdec_nrfx_pm_action(const struct device *dev,
 				enum pm_device_action action)
 {
 	int ret = 0;
-	ARG_UNUSED(dev);
-	const nrfx_qdec_t *qdec = &get_dev_config(dev)->qdec;
+	const struct qdec_nrfx_config *config = get_dev_config(dev);
+	const nrfx_qdec_t *qdec = &config->qdec;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		ret = pinctrl_apply_state(qdec_nrfx_pcfg,
+		ret = pinctrl_apply_state(config->pcfg,
 					  PINCTRL_STATE_DEFAULT);
 		if (ret < 0) {
 			return ret;
@@ -230,8 +227,7 @@ static int qdec_nrfx_pm_action(const struct device *dev,
 	case PM_DEVICE_ACTION_TURN_OFF:
 		/* device must be uninitialized */
 		nrfx_qdec_uninit(qdec);
-
-		ret = pinctrl_apply_state(qdec_nrfx_pcfg,
+		ret = pinctrl_apply_state(config->pcfg,
 					  PINCTRL_STATE_SLEEP);
 		if (ret < 0) {
 			return ret;
@@ -242,8 +238,7 @@ static int qdec_nrfx_pm_action(const struct device *dev,
 		/* device must be suspended */
 		nrfx_qdec_disable(qdec);
 		qdec_nrfx_gpio_ctrl(dev, false);
-
-		ret = pinctrl_apply_state(qdec_nrfx_pcfg,
+		ret = pinctrl_apply_state(config->pcfg,
 					  PINCTRL_STATE_SLEEP);
 		if (ret < 0) {
 			return ret;
@@ -269,33 +264,22 @@ static const struct sensor_driver_api qdec_nrfx_driver_api = {
 #define QDEC_NRFX_DATA(idx) \
 	static struct qdec_nrfx_data qdec_nrfx_##idx##_data
 
-#define QDEC_NRFX_CONFIG_LED_PIN(idx)			     \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, led_pin),     \
-		    (.led_pin = DT_INST_PROP(idx, led_pin)), \
-		    (.led_pin = NRF_QDEC_LED_NOT_CONNECTED))
-
-#define QDEC_NRFX_CONFIG_ENABLE_PIN(idx)			   \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, enable_pin),	   \
-		    (.enable_pin = DT_INST_PROP(idx, enable_pin)), \
+#define QDEC_NRFX_CONFIG_ENABLE_PIN(idx)				       \
+	COND_CODE_1(DT_NODE_HAS_PROP(QDEC_NRFX_NODE(idx), enable_pin),	       \
+		    (.enable_pin = DT_PROP(QDEC_NRFX_NODE(idx), enable_pin)),  \
 		    (.enable_pin = QDEC_NRFX_PIN_UNUSED))
 
 #define QDEC_NRFX_CONFIG(idx)							     \
+	PM_DEVICE_DT_DEFINE(QDEC_NRFX_NODE(idx), qdec_nrfx_pm_action);		     \
+	PINCTRL_DT_DEFINE(QDEC_NRFX_NODE(idx));					     \
 	static const struct qdec_nrfx_config qdec_nrfx_##idx##_config = {	     \
 		.qdec = NRFX_QDEC_INSTANCE(idx),				     \
 		.nrfx_config = {						     \
-			.nrfy_config = {					     \
-				.reportper = NRF_QDEC_REPORTPER_40,		     \
-				.sampleper = NRF_QDEC_SAMPLEPER_2048us,		     \
-				.pins = {					     \
-					.a_pin = DT_INST_PROP(idx, a_pin),	     \
-					.b_pin = DT_INST_PROP(idx, b_pin),	     \
-					QDEC_NRFX_CONFIG_LED_PIN(idx),		     \
-				},						     \
-				.ledpre = DT_INST_PROP(idx, led_pre),		     \
-				.ledpol = NRF_QDEC_LEPOL_ACTIVE_HIGH,		     \
-				.dbfen = NRF_QDEC_DBFEN_DISABLE,		     \
-				.skip_psel_cfg = true				     \
-			},							     \
+			.reportper = NRF_QDEC_REPORTPER_40,			     \
+			.sampleper = NRF_QDEC_SAMPLEPER_2048US,			     \
+			.ledpre = DT_PROP(QDEC_NRFX_NODE(idx), led_pre),	     \
+			.ledpol = NRF_QDEC_LEPOL_ACTIVE_HIGH,			     \
+			.dbfen = NRF_QDEC_DBFEN_DISABLE,			     \
 			.interrupt_priority = DT_IRQ(QDEC_NRFX_NODE(idx), priority), \
 			.sample_inten = false,					     \
 			.reportper_inten = true,				     \
@@ -303,7 +287,8 @@ static const struct sensor_driver_api qdec_nrfx_driver_api = {
 			.skip_gpio_cfg = true					     \
 		},								     \
 		QDEC_NRFX_CONFIG_ENABLE_PIN(idx),				     \
-		.steps = DT_INST_PROP(idx, steps),				     \
+		.steps = DT_PROP(QDEC_NRFX_NODE(idx), steps),			     \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(QDEC_NRFX_NODE(idx)),		     \
 	}
 
 #define QDEC_NRFX_INIT(idx)					    \
@@ -312,31 +297,37 @@ static const struct sensor_driver_api qdec_nrfx_driver_api = {
 		IRQ_CONNECT(DT_IRQN(QDEC_NRFX_NODE(idx)),	    \
 			    DT_IRQ(QDEC_NRFX_NODE(idx), priority),  \
 			    nrfx_isr,				    \
-			    qdec_nrfx_event_handler,		    \
+			    nrfx_qdec_##idx##_irq_handler,	    \
 			    0);					    \
 		irq_enable(DT_IRQN(QDEC_NRFX_NODE(idx)));	    \
 		return qdec_nrfx_init(dev);			    \
 	}
 
-#define QDEC_NRFX_DT(idx)				   \
-	SENSOR_DEVICE_DT_INST_DEFINE(idx,			   \
-			      qdec_nrfx_##idx##_init,	   \
-			      qdec_nrfx_pm_action,	   \
-			      &qdec_nrfx_##idx##_data,	   \
-			      &qdec_nrfx_##idx##_config,   \
-			      POST_KERNEL,		   \
-			      CONFIG_SENSOR_INIT_PRIORITY, \
+#define QDEC_NRFX_DT(idx)						   \
+	SENSOR_DEVICE_DT_DEFINE(QDEC_NRFX_NODE(idx),			   \
+			      qdec_nrfx_##idx##_init,			   \
+			      PM_DEVICE_DT_GET(QDEC_NRFX_NODE(idx)),	   \
+			      &qdec_nrfx_##idx##_data,			   \
+			      &qdec_nrfx_##idx##_config,		   \
+			      POST_KERNEL,				   \
+			      CONFIG_SENSOR_INIT_PRIORITY,		   \
 			      &qdec_nrfx_driver_api)
 
-#define QDEC_NRFX_ASSERT(idx)							  \
-	BUILD_ASSERT(DT_INST_PROP(idx, steps) > 0, "Only positive number valid"); \
-	BUILD_ASSERT(DT_INST_PROP(idx, steps) <= 2048, "Overflow possible")
+#define QDEC_NRFX_ASSERT(idx)								     \
+	BUILD_ASSERT(DT_PROP(QDEC_NRFX_NODE(idx), steps) > 0, "Only positive number valid"); \
+	BUILD_ASSERT(DT_PROP(QDEC_NRFX_NODE(idx), steps) <= 2048, "Overflow possible")
 
 #define QDEC_NRFX_DEVICE(idx)  \
 	QDEC_NRFX_DATA(idx);   \
 	QDEC_NRFX_CONFIG(idx); \
 	QDEC_NRFX_INIT(idx);   \
 	QDEC_NRFX_DT(idx);     \
-	QDEC_NRFX_ASSERT(idx);
+	QDEC_NRFX_ASSERT(idx)
 
-DT_INST_FOREACH_STATUS_OKAY(QDEC_NRFX_DEVICE)
+#ifdef CONFIG_QDEC_NRFX_0
+QDEC_NRFX_DEVICE(0);
+#endif
+
+#ifdef CONFIG_QDEC_NRFX_1
+QDEC_NRFX_DEVICE(1);
+#endif
