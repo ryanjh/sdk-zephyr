@@ -419,7 +419,7 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 		.twim_config = {					       \
 			.skip_gpio_cfg = true,				       \
 			.skip_psel_cfg = true,				       \
-			.nrfy_config.frequency = I2C_FREQUENCY(idx)	       \
+			.frequency = I2C_FREQUENCY(idx)			       \
 		},							       \
 		.concat_buf_size = CONCAT_BUF_SIZE(idx),		       \
 		.flash_buf_max_size = FLASH_BUF_MAX_SIZE(idx),		       \

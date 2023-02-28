@@ -179,8 +179,8 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 		}
 	}
 
-	config->nrfy_config.config.mck_setup = best_mck_cfg;
-	config->nrfy_config.config.ratio = ratios[best_r].ratio_enum;
+	config->config.mck_setup = best_mck_cfg;
+	config->config.ratio = ratios[best_r].ratio_enum;
 }
 
 static bool get_next_tx_buffer(struct i2s_nrfx_drv_data *drv_data,
@@ -434,17 +434,17 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 
 	switch (i2s_cfg->word_size) {
 	case 8:
-		nrfx_cfg.nrfy_config.config.sample_width = NRF_I2S_SWIDTH_8BIT;
+		nrfx_cfg.config.sample_width = NRF_I2S_SWIDTH_8BIT;
 		break;
 	case 16:
-		nrfx_cfg.nrfy_config.config.sample_width = NRF_I2S_SWIDTH_16BIT;
+		nrfx_cfg.config.sample_width = NRF_I2S_SWIDTH_16BIT;
 		break;
 	case 24:
-		nrfx_cfg.nrfy_config.config.sample_width = NRF_I2S_SWIDTH_24BIT;
+		nrfx_cfg.config.sample_width = NRF_I2S_SWIDTH_24BIT;
 		break;
 #if NRF_I2S_HAS_SWIDTH_32BIT
 	case 32:
-		nrfx_cfg.nrfy_config.config.sample_width = NRF_I2S_SWIDTH_32BIT;
+		nrfx_cfg.config.sample_width = NRF_I2S_SWIDTH_32BIT;
 		break;
 #endif
 	default:
@@ -454,16 +454,16 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 
 	switch (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) {
 	case I2S_FMT_DATA_FORMAT_I2S:
-		nrfx_cfg.nrfy_config.config.alignment = NRF_I2S_ALIGN_LEFT;
-		nrfx_cfg.nrfy_config.config.format = NRF_I2S_FORMAT_I2S;
+		nrfx_cfg.config.alignment = NRF_I2S_ALIGN_LEFT;
+		nrfx_cfg.config.format = NRF_I2S_FORMAT_I2S;
 		break;
 	case I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED:
-		nrfx_cfg.nrfy_config.config.alignment = NRF_I2S_ALIGN_LEFT;
-		nrfx_cfg.nrfy_config.config.format = NRF_I2S_FORMAT_ALIGNED;
+		nrfx_cfg.config.alignment = NRF_I2S_ALIGN_LEFT;
+		nrfx_cfg.config.format = NRF_I2S_FORMAT_ALIGNED;
 		break;
 	case I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED:
-		nrfx_cfg.nrfy_config.config.alignment = NRF_I2S_ALIGN_RIGHT;
-		nrfx_cfg.nrfy_config.config.format = NRF_I2S_FORMAT_ALIGNED;
+		nrfx_cfg.config.alignment = NRF_I2S_ALIGN_RIGHT;
+		nrfx_cfg.config.format = NRF_I2S_FORMAT_ALIGNED;
 		break;
 	default:
 		LOG_ERR("Unsupported data format: 0x%02x", i2s_cfg->format);
@@ -478,9 +478,9 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 	}
 
 	if (i2s_cfg->channels == 2) {
-		nrfx_cfg.nrfy_config.config.channels = NRF_I2S_CHANNELS_STEREO;
+		nrfx_cfg.config.channels = NRF_I2S_CHANNELS_STEREO;
 	} else if (i2s_cfg->channels == 1) {
-		nrfx_cfg.nrfy_config.config.channels = NRF_I2S_CHANNELS_LEFT;
+		nrfx_cfg.config.channels = NRF_I2S_CHANNELS_LEFT;
 	} else {
 		LOG_ERR("Unsupported number of channels: %u",
 			i2s_cfg->channels);
@@ -489,10 +489,10 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 
 	if ((i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) &&
 	    (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE)) {
-		nrfx_cfg.nrfy_config.config.mode = NRF_I2S_MODE_SLAVE;
+		nrfx_cfg.config.mode = NRF_I2S_MODE_SLAVE;
 	} else if (!(i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) &&
 		   !(i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE)) {
-		nrfx_cfg.nrfy_config.config.mode = NRF_I2S_MODE_MASTER;
+		nrfx_cfg.config.mode = NRF_I2S_MODE_MASTER;
 	} else {
 		LOG_ERR("Unsupported operation mode: 0x%02x", i2s_cfg->options);
 		return -EINVAL;
@@ -501,8 +501,8 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 	/* If the master clock generator is needed (i.e. in Master mode or when
 	 * the MCK output is used), find a suitable clock configuration for it.
 	 */
-	if (nrfx_cfg.nrfy_config.config.mode == NRF_I2S_MODE_MASTER ||
-	    nrfx_cfg.nrfy_config.pins.mck_pin != NRF_I2S_PIN_NOT_CONNECTED) {
+	if (nrfx_cfg.config.mode == NRF_I2S_MODE_MASTER ||
+	    nrfx_cfg.pins.mck_pin != NRF_I2S_PIN_NOT_CONNECTED) {
 		find_suitable_clock(drv_cfg, &nrfx_cfg, i2s_cfg);
 		/* Unless the PCLK32M source is used with the HFINT oscillator
 		 * (which is always available without any additional actions),
@@ -511,7 +511,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 		 */
 		drv_data->request_clock = (drv_cfg->clk_src != PCLK32M);
 	} else {
-		nrfx_cfg.nrfy_config.config.mck_setup = NRF_I2S_MCK_DISABLED;
+		nrfx_cfg.config.mck_setup = NRF_I2S_MCK_DISABLED;
 		drv_data->request_clock = false;
 	}
 
@@ -710,9 +710,8 @@ static int trigger_start(const struct device *dev)
 				      : &drv_data->rx.nrfx_cfg;
 
 #if NRF_I2S_HAS_CLKCONFIG
-	nrfx_cfg->nrfy_config.clksrc = drv_cfg->clk_src == ACLK ?
-				       NRF_I2S_CLKSRC_ACLK : NRF_I2S_CLKSRC_PCLK32M;
-	nrfx_cfg->nrfy_config.enable_bypass = false;
+	nrfx_cfg->clksrc = drv_cfg->clk_src == ACLK ? NRF_I2S_CLKSRC_ACLK : NRF_I2S_CLKSRC_PCLK32M;
+	nrfx_cfg->enable_bypass = false;
 #endif
 
 	err = nrfx_i2s_init(&drv_cfg->i2s, nrfx_cfg, drv_cfg->data_handler);
