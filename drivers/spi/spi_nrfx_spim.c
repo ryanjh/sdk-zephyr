@@ -181,10 +181,9 @@ static int configure(const struct device *dev,
 	config = dev_config->def_config;
 
 	/* Limit the frequency to that supported by the SPIM instance. */
-	config.nrfy_config.frequency = get_nrf_spim_frequency(MIN(spi_cfg->frequency,
-							      max_freq));
-	config.nrfy_config.mode      = get_nrf_spim_mode(spi_cfg->operation);
-	config.nrfy_config.bit_order = get_nrf_spim_bit_order(spi_cfg->operation);
+	config.frequency = get_nrf_spim_frequency(MIN(spi_cfg->frequency, max_freq));
+	config.mode      = get_nrf_spim_mode(spi_cfg->operation);
+	config.bit_order = get_nrf_spim_bit_order(spi_cfg->operation);
 
 	if (dev_data->initialized) {
 		nrfx_spim_uninit(&dev_config->spim);
@@ -574,13 +573,12 @@ static int spi_nrfx_init(const struct device *dev)
 #define SPIM_PROP(idx, prop)		DT_PROP(SPIM(idx), prop)
 #define SPIM_HAS_PROP(idx, prop)	DT_NODE_HAS_PROP(SPIM(idx), prop)
 
-#define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)						       \
-	IF_ENABLED(NRFX_SPIM_EXTENDED_ENABLED,						       \
-		(.nrfy_config.ext_enable = true,					       \
-		 .nrfy_config.ext_config.pins.dcx_pin = NRF_SPIM_PIN_NOT_CONNECTED,	       \
-		 .nrfy_config.ext_config.pins.csn_pin = NRF_SPIM_PIN_NOT_CONNECTED,	       \
-		COND_CODE_1(SPIM_PROP(idx, rx_delay_supported),				       \
-			(.nrfy_config.ext_config.rx_delay = SPIM_PROP(idx, rx_delay),),()) \
+#define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)			    \
+	IF_ENABLED(NRFX_SPIM_EXTENDED_ENABLED,			    \
+		(.dcx_pin = NRF_SPIM_PIN_NOT_CONNECTED,		    \
+		 .ss_pin = NRF_SPIM_PIN_NOT_CONNECTED,		    \
+		COND_CODE_1(SPIM_PROP(idx, rx_delay_supported),	    \
+			(.rx_delay = SPIM_PROP(idx, rx_delay),),()) \
 		))
 
 #define SPI_NRFX_SPIM_DEFINE(idx)					       \
@@ -618,10 +616,10 @@ static int spi_nrfx_init(const struct device *dev)
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIM(idx)),		       \
 		.max_chunk_len = BIT_MASK(SPIM_PROP(idx, easydma_maxcnt_bits)),\
 		.def_config = {						       \
-			SPI_NRFX_SPIM_PIN_CFG(idx)			       \
+			.skip_gpio_cfg = true,				       \
+			.skip_psel_cfg = true,				       \
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
-			.nrfy_config.orc = SPIM_PROP(idx, overrun_character),  \
-			.sw_ss_pin = NRF_SPIM_PIN_NOT_CONNECTED		       \
+			.orc = SPIM_PROP(idx, overrun_character),	       \
 		},							       \
 		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
 			(.anomaly_58_workaround =			       \
