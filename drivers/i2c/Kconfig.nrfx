@@ -64,4 +64,12 @@ config I2C_3_NRF_TWIM
 	  This peripheral accepts transfers from RAM only,
 	  if provided buffer is placed in flash, transfer will fail.
 
+config I2C_120_NRF_TWIM
+	def_bool HAS_HW_NRF_TWIM120
+	select NRFX_TWIM120
+	help
+	  Enable nRF TWI Master with EasyDMA on port 120.
+	  This peripheral accepts transfers from RAM only,
+	  if provided buffer is placed in flash, transfer will fail.
+
 endif # I2C_NRFX
