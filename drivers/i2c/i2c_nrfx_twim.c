@@ -129,11 +129,11 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		}
 
 		if (msg_buf_used == 0) {
-			cur_xfer.primary_buffer.p_buffer = msgs[i].buf;
-			cur_xfer.primary_buffer.length = msgs[i].len;
+			cur_xfer.p_primary_buf = msgs[i].buf;
+			cur_xfer.primary_length = msgs[i].len;
 		} else {
-			cur_xfer.primary_buffer.p_buffer = msg_buf;
-			cur_xfer.primary_buffer.length = msg_buf_used;
+			cur_xfer.p_primary_buf = msg_buf;
+			cur_xfer.primary_length = msg_buf_used;
 		}
 		cur_xfer.type = (msgs[i].flags & I2C_MSG_READ) ?
 			NRFX_TWIM_XFER_RX : NRFX_TWIM_XFER_TX;
@@ -189,7 +189,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		 * content of concatenation buffer has to be copied back into
 		 * buffers provided by user. */
 		if ((msgs[i].flags & I2C_MSG_READ)
-		    && cur_xfer.primary_buffer.p_buffer == msg_buf) {
+		    && cur_xfer.p_primary_buf == msg_buf) {
 			int j = i;
 
 			while (msg_buf_used >= msgs[j].len) {
