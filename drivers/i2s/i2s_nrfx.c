@@ -921,11 +921,11 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 		.i2s = NRFX_I2S_INSTANCE(idx),				     \
 		.data_handler = data_handler##idx,			     \
 		.nrfx_def_cfg = NRFX_I2S_DEFAULT_CONFIG(		     \
-			NRFX_I2S_PIN_NOT_USED,				     \
-			NRFX_I2S_PIN_NOT_USED,				     \
-			NRFX_I2S_PIN_NOT_USED,				     \
-			NRFX_I2S_PIN_NOT_USED,				     \
-			NRFX_I2S_PIN_NOT_USED),				     \
+			NRF_I2S_PIN_NOT_CONNECTED,				     \
+			NRF_I2S_PIN_NOT_CONNECTED,				     \
+			NRF_I2S_PIN_NOT_CONNECTED,				     \
+			NRF_I2S_PIN_NOT_CONNECTED,				     \
+			NRF_I2S_PIN_NOT_CONNECTED),				     \
 		.nrfx_def_cfg.skip_gpio_cfg = true,			     \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2S(idx)),		     \
 		.clk_src = I2S_CLK_SRC(idx),				     \
