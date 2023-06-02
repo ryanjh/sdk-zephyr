@@ -49,7 +49,7 @@ static inline const struct qdec_nrfx_config *get_dev_config(const struct device 
 	return dev->config;
 }
 
-static void accumulate(struct qdec_nrfx_data *data, int16_t acc)
+static void accumulate(struct qdec_nrfx_data *data, int32_t acc)
 {
 	unsigned int key = irq_lock();
 
@@ -68,8 +68,8 @@ static int qdec_nrfx_sample_fetch(const struct device *dev,
 {
 	const nrfx_qdec_t *qdec = &get_dev_config(dev)->qdec;
 	struct qdec_nrfx_data *data = get_dev_data(dev);
-	int16_t acc;
-	int8_t accdbl;
+	int32_t acc;
+	uint32_t accdbl;
 
 	if ((chan != SENSOR_CHAN_ALL) && (chan != SENSOR_CHAN_ROTATION)) {
 		return -ENOTSUP;
