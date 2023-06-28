@@ -275,11 +275,13 @@ static const struct sensor_driver_api qdec_nrfx_driver_api = {
 	static const struct qdec_nrfx_config qdec_nrfx_##idx##_config = {	     \
 		.qdec = NRFX_QDEC_INSTANCE(idx),				     \
 		.nrfx_config = {						     \
-			.reportper = NRF_QDEC_REPORTPER_40,			     \
-			.sampleper = NRF_QDEC_SAMPLEPER_2048US,			     \
-			.ledpre = DT_PROP(QDEC_NRFX_NODE(idx), led_pre),	     \
-			.ledpol = NRF_QDEC_LEPOL_ACTIVE_HIGH,			     \
-			.dbfen = NRF_QDEC_DBFEN_DISABLE,			     \
+			.nrfy_config = {					     \
+				.reportper = NRF_QDEC_REPORTPER_40,		     \
+				.sampleper = NRF_QDEC_SAMPLEPER_2048US,		     \
+				.ledpre = DT_PROP(QDEC_NRFX_NODE(idx), led_pre),     \
+				.ledpol = NRF_QDEC_LEPOL_ACTIVE_HIGH,		     \
+				.dbfen = NRF_QDEC_DBFEN_DISABLE			     \
+			},							     \
 			.interrupt_priority = DT_IRQ(QDEC_NRFX_NODE(idx), priority), \
 			.sample_inten = false,					     \
 			.reportper_inten = true,				     \
@@ -287,8 +289,8 @@ static const struct sensor_driver_api qdec_nrfx_driver_api = {
 			.skip_gpio_cfg = true					     \
 		},								     \
 		QDEC_NRFX_CONFIG_ENABLE_PIN(idx),				     \
-		.steps = DT_PROP(QDEC_NRFX_NODE(idx), steps),			     \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(QDEC_NRFX_NODE(idx)),		     \
+		.steps = DT_PROP(QDEC_NRFX_NODE(idx), steps),				     \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(QDEC_NRFX_NODE(idx)),			     \
 	}
 
 #define QDEC_NRFX_INIT(idx)					    \
