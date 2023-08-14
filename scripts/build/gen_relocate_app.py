@@ -77,16 +77,18 @@ class SectionKind(Enum):
         >>> SectionKind.for_section_with_name(".device_handles")
         None
         """
-        if ".text." in name:
+        if ".nordic_relocation" in name:
             return cls.TEXT
-        elif ".rodata." in name:
-            return cls.RODATA
-        elif ".data." in name:
-            return cls.DATA
-        elif ".bss." in name:
-            return cls.BSS
-        elif ".literal." in name:
-            return cls.LITERAL
+        # if ".text." in name:
+        #     return cls.TEXT
+        # elif ".rodata." in name:
+        #     return cls.RODATA
+        # elif ".data." in name:
+        #     return cls.DATA
+        # elif ".bss." in name:
+        #     return cls.BSS
+        # elif ".literal." in name:
+        #     return cls.LITERAL
         else:
             return None
 
@@ -241,7 +243,8 @@ def find_sections(filename: str) -> 'dict[SectionKind, list[OutputSection]]':
                 continue
 
             out[section_kind].append(
-                OutputSection(obj_file_path.name, section.name)
+                # OutputSection(obj_file_path.name, section.name)
+                OutputSection('', section.name)
             )
 
             # Common variables will be placed in the .bss section
